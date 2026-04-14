@@ -8,8 +8,16 @@
 
   <title>Canvas Flowmap Layer with LeafletJS</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "leaflet": "https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js"
+    }
+  }
+  </script>
   <link rel="stylesheet" href="css/normalize.css" />
   <link rel="stylesheet" href="css/skeleton.css" />
 
@@ -84,7 +92,6 @@
       }
     }
   </style>
-
 </head>
 
 <body>
@@ -92,7 +99,6 @@
   <div id="map"></div>
 
   <div id="controlPanel" class="control-panel">
-
     <div class="container" style="width: 100%; padding: 5px 10px;">
 
       <h4>Canvas Flowmap Layer</h4>
@@ -149,30 +155,21 @@
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- first load LeafletJS -->
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script type="module">
+    import { Map as LeafletMap, TileLayer } from 'leaflet';
+    import { CanvasFlowmapLayer } from '../../dist/canvas-flowmap-layer.js';
+    import Papa from 'https://esm.sh/papaparse@5';
 
-  <!-- load Esri Leaflet because we want to use an Esri basemap -->
-  <script src="https://unpkg.com/esri-leaflet@3.0.0/dist/esri-leaflet.js"></script>
+    const map = new LeafletMap('map').setView([7, 139], 3);
+    new TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(map);
 
-  <!-- load animation tweening lib requirement for CanvasFlowMapLayer -->
-  <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
-
-  <!-- then load CanvasFlowMapLayer -->
-  <script src="../../src/CanvasFlowmapLayer.js"></script>
-
-  <!-- also load 3rd-party CSV parsing libary just for this demo  -->
-  <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
-
-  <script>
-    var map = L.map('map').setView([7, 139], 3);
-
-    L.esri.basemapLayer('DarkGray').addTo(map);
-
-    var layersArray = [];
+    const layersArray = [];
     createCanvasFlowmapLayer('../csv-data/Flowmap_Cities_one_to_many.csv', 0, true);
     createCanvasFlowmapLayer('../csv-data/Flowmap_Cities_many_to_one.csv', 1);
     createCanvasFlowmapLayer('../csv-data/Flowmap_Cities_one_to_one.csv', 2);
@@ -184,8 +181,7 @@
         dynamicTyping: true,
         skipEmptyLines: true,
         complete: function(results) {
-
-          var geoJsonFeatureCollection = {
+          const geoJsonFeatureCollection = {
             type: 'FeatureCollection',
             features: results.data.map(function(datum) {
               return {
@@ -195,22 +191,16 @@
                   coordinates: [datum.s_lon, datum.s_lat]
                 },
                 properties: datum
-              }
+              };
             })
           };
 
-          var demoLayer = L.canvasFlowmapLayer(geoJsonFeatureCollection, {
+          const demoLayer = new CanvasFlowmapLayer(geoJsonFeatureCollection, {
             originAndDestinationFieldIds: {
               originUniqueIdField: 's_city_id',
-              originGeometry: {
-                x: 's_lon',
-                y: 's_lat'
-              },
+              originGeometry: { x: 's_lon', y: 's_lat' },
               destinationUniqueIdField: 'e_city_id',
-              destinationGeometry: {
-                x: 'e_lon',
-                y: 'e_lat'
-              }
+              destinationGeometry: { x: 'e_lon', y: 'e_lat' }
             },
             pathDisplayMode: 'selection',
             animationStarted: true,
@@ -225,20 +215,15 @@
           if (doOneTimeDemoSetup) {
             demoLayer.addTo(map);
 
-            layerListenerChange({
-              target: userInteractionSelect
-            });
+            layerListenerChange({ target: userInteractionSelect });
 
-            // immediately select an origin point for Bezier path display,
-            // instead of waiting for the first user click event to fire
             demoLayer.selectFeaturesForPathDisplayById('s_city_id', 642, true, 'SELECTION_NEW');
 
-            // populate animation easing options for select drop-down
-            var pathAnimationStyleSelect = document.getElementById('pathAnimationStyleSelect');
-            var tweenEasingFamilies = demoLayer.getAnimationEasingOptions();
+            const pathAnimationStyleSelect = document.getElementById('pathAnimationStyleSelect');
+            const tweenEasingFamilies = demoLayer.getAnimationEasingOptions();
             Object.keys(tweenEasingFamilies).forEach(function(family) {
               tweenEasingFamilies[family].types.forEach(function(type) {
-                var option = document.createElement('option');
+                const option = document.createElement('option');
                 option.value = family + ',' + type;
                 option.text = (type === 'None') ? family : (family + ', ' + type);
 
@@ -257,19 +242,17 @@
       });
     }
 
-    // establish references to form elements in the control panel card
-    var oneToManyLayerButton = document.getElementById('oneToManyLayerButton');
-    var manyToOneLayerButton = document.getElementById('manyToOneLayerButton');
-    var oneToOneLayerButton = document.getElementById('oneToOneLayerButton');
-    var pathAnimationButton = document.getElementById('pathAnimationButton');
-    var pathAnimationStyleSelect = document.getElementById('pathAnimationStyleSelect');
-    var pathAnimationDurationInput = document.getElementById('pathAnimationDurationInput');
-    var userInteractionSelect = document.getElementById('userInteractionSelect');
-    var pathSelectionTypeSelect = document.getElementById('pathSelectionTypeSelect');
-    var showAllPathsButton = document.getElementById('showAllPathsButton');
-    var clearAllPathsButton = document.getElementById('clearAllPathsButton');
+    const oneToManyLayerButton = document.getElementById('oneToManyLayerButton');
+    const manyToOneLayerButton = document.getElementById('manyToOneLayerButton');
+    const oneToOneLayerButton = document.getElementById('oneToOneLayerButton');
+    const pathAnimationButton = document.getElementById('pathAnimationButton');
+    const pathAnimationStyleSelect = document.getElementById('pathAnimationStyleSelect');
+    const pathAnimationDurationInput = document.getElementById('pathAnimationDurationInput');
+    const userInteractionSelect = document.getElementById('userInteractionSelect');
+    const pathSelectionTypeSelect = document.getElementById('pathSelectionTypeSelect');
+    const showAllPathsButton = document.getElementById('showAllPathsButton');
+    const clearAllPathsButton = document.getElementById('clearAllPathsButton');
 
-    // establish actions for form elements in the control panel card
     oneToManyLayerButton.addEventListener('click', toggleActiveLayer);
     manyToOneLayerButton.addEventListener('click', toggleActiveLayer);
     oneToOneLayerButton.addEventListener('click', toggleActiveLayer);
@@ -287,18 +270,12 @@
         }
       });
 
-      layerListenerChange({
-        target: userInteractionSelect
-      });
-
+      layerListenerChange({ target: userInteractionSelect });
       evt.target.classList.add('button-primary');
     }
 
     pathAnimationStyleSelect.addEventListener('change', function(evt) {
-      var optionValueToArray = evt.target.value.split(',');
-      var easingFamily = optionValueToArray[0];
-      var easingType = optionValueToArray[1];
-
+      const [easingFamily, easingType] = evt.target.value.split(',');
       layersArray.forEach(function(layer) {
         layer.setAnimationEasing(easingFamily, easingType);
       });
@@ -328,7 +305,6 @@
       });
     });
 
-    // toggle click or mouseover listeners
     userInteractionSelect.addEventListener('change', layerListenerChange);
 
     function layerListenerChange(e) {
@@ -357,17 +333,12 @@
     }
 
     showAllPathsButton.addEventListener('click', function() {
-      layersArray.forEach(function(layer) {
-        layer.selectAllFeaturesForPathDisplay();
-      });
+      layersArray.forEach(function(layer) { layer.selectAllFeaturesForPathDisplay(); });
     });
 
     clearAllPathsButton.addEventListener('click', function() {
-      layersArray.forEach(function(layer) {
-        layer.clearAllPathSelections();
-      });
+      layersArray.forEach(function(layer) { layer.clearAllPathSelections(); });
     });
-
   </script>
 
 </body>

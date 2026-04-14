@@ -4,11 +4,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <meta name="description" content="Canvas Flowmap Layer with LeafletJS." />
+  <meta name="description" content="Canvas Flowmap Layer with LeafletJS — Class Breaks Symbology." />
 
-  <title>Canvas Flowmap Layer with LeafletJS</title>
+  <title>Canvas Flowmap Layer with LeafletJS — Class Breaks Symbology</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "leaflet": "https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js"
+    }
+  }
+  </script>
 
   <style>
     body {
@@ -23,40 +31,24 @@
       right: 0;
       left: 0;
     }
-
   </style>
-
 </head>
 
 <body>
 
   <div id="map"></div>
 
-  <!-- first load LeafletJS -->
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script type="module">
+    import { Map as LeafletMap, TileLayer } from 'leaflet';
+    import { CanvasFlowmapLayer } from '../../dist/canvas-flowmap-layer.js';
+    import Papa from 'https://esm.sh/papaparse@5';
 
-  <!-- load Esri Leaflet because we want to use an Esri basemap -->
-  <script src="https://unpkg.com/esri-leaflet@3.0.0/dist/esri-leaflet.js"></script>
-
-  <!-- load animation tweening lib requirement for CanvasFlowMapLayer -->
-  <script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
-
-  <!-- then load CanvasFlowMapLayer -->
-  <script src="../../src/CanvasFlowmapLayer.js"></script>
-
-  <!-- also load 3rd-party CSV parsing libary just for this demo  -->
-  <script src="https://unpkg.com/papaparse@5.3.0/papaparse.min.js"></script>
-
-  <script>
-    var map = L.map('map');
-
-    if (L.Browser.mobile) {
-      map.setView([15, -21.95], 2);
-    } else {
-      map.setView([0, 0], 2);
-    }
-
-    L.esri.basemapLayer('DarkGray').addTo(map);
+    const map = new LeafletMap('map').setView([0, 0], 2);
+    new TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20
+    }).addTo(map);
 
     Papa.parse('../csv-data/Flowmap_Cities_one_to_many.csv', {
       download: true,
@@ -64,7 +56,7 @@
       dynamicTyping: true,
       skipEmptyLines: true,
       complete: function(results) {
-        var geoJsonFeatureCollection = {
+        const geoJsonFeatureCollection = {
           type: 'FeatureCollection',
           features: results.data.map(function(datum) {
             return {
@@ -74,75 +66,68 @@
                 coordinates: [datum.s_lon, datum.s_lat]
               },
               properties: datum
-            }
+            };
           })
         };
 
-        var oneToManyFlowmapLayer = L.canvasFlowmapLayer(geoJsonFeatureCollection, {
+        const oneToManyFlowmapLayer = new CanvasFlowmapLayer(geoJsonFeatureCollection, {
           originAndDestinationFieldIds: {
             originUniqueIdField: 's_city_id',
-            originGeometry: {
-              x: 's_lon',
-              y: 's_lat'
-            },
+            originGeometry: { x: 's_lon', y: 's_lat' },
             destinationUniqueIdField: 'e_city_id',
-            destinationGeometry: {
-              x: 'e_lon',
-              y: 'e_lat'
-            }
+            destinationGeometry: { x: 'e_lon', y: 'e_lat' }
           },
           canvasBezierStyle: {
             type: 'classBreaks',
             field: 's_Volume',
-            classBreakInfos: [{
-              classMinValue: 0,
-              classMaxValue: 999999,
-              symbol: {
-                strokeStyle: '#e7e1ef',
-                lineWidth: 0.5,
-                lineCap: 'round',
-                shadowColor: '#e7e1ef',
-                shadowBlur: 1.5
+            classBreakInfos: [
+              {
+                classMinValue: 0,
+                classMaxValue: 999999,
+                symbol: {
+                  strokeStyle: '#e7e1ef',
+                  lineWidth: 0.5,
+                  lineCap: 'round',
+                  shadowColor: '#e7e1ef',
+                  shadowBlur: 1.5
+                }
+              },
+              {
+                classMinValue: 1000000,
+                classMaxValue: 4999999,
+                symbol: {
+                  strokeStyle: '#c994c7',
+                  lineWidth: 1.5,
+                  lineCap: 'round',
+                  shadowColor: '#c994c7',
+                  shadowBlur: 1.5
+                }
+              },
+              {
+                classMinValue: 5000000,
+                classMaxValue: 10000000,
+                symbol: {
+                  strokeStyle: '#dd1c77',
+                  lineWidth: 3,
+                  lineCap: 'round',
+                  shadowColor: '#dd1c77',
+                  shadowBlur: 1.5
+                }
               }
-            }, {
-              classMinValue: 1000000,
-              classMaxValue: 4999999,
-              symbol: {
-                strokeStyle: '#c994c7',
-                lineWidth: 1.5,
-                lineCap: 'round',
-                shadowColor: '#c994c7',
-                shadowBlur: 1.5
-              }
-            }, {
-              classMinValue: 5000000,
-              classMaxValue: 10000000,
-              symbol: {
-                strokeStyle: '#dd1c77',
-                lineWidth: 3,
-                lineCap: 'round',
-                shadowColor: '#dd1c77',
-                shadowBlur: 1.5
-              }
-            }],
-            // the layer will use the defaultSymbol if a data value doesn't fit
-            // in any of the defined classBreaks
+            ],
+            // the layer will use the defaultSymbol if a data value doesn't fit any classBreak
             defaultSymbol: {
               strokeStyle: '#e7e1ef',
               lineWidth: 0.5,
               lineCap: 'round',
               shadowColor: '#e7e1ef',
               shadowBlur: 1.5
-            },
+            }
           },
           pathDisplayMode: 'selection',
           animationStarted: false
         }).addTo(map);
 
-        // since this demo is using the optional "pathDisplayMode" as "selection",
-        // it is up to the developer to wire up a click or mouseover listener
-        // and then call the "selectFeaturesForPathDisplay()" method to inform the layer
-        // which Bezier paths need to be drawn
         oneToManyFlowmapLayer.on('click', function(e) {
           if (e.sharedOriginFeatures.length) {
             oneToManyFlowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
@@ -152,8 +137,6 @@
           }
         });
 
-        // immediately select a few origin points for Bezier path display,
-        // instead of waiting for the first user click event to fire
         oneToManyFlowmapLayer.selectFeaturesForPathDisplayById('s_city_id', 562, true, 'SELECTION_NEW');
         oneToManyFlowmapLayer.selectFeaturesForPathDisplayById('s_city_id', 657, true, 'SELECTION_ADD');
         oneToManyFlowmapLayer.selectFeaturesForPathDisplayById('s_city_id', 516, true, 'SELECTION_ADD');
