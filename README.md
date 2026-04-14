@@ -2,6 +2,51 @@
 
 The `Leaflet.Canvas-Flowmap-Layer` is a custom layer plugin for [LeafletJS](http://leafletjs.com/) to map the flow of objects from an origin point to a destination point by using a Bezier curve. GeoJSON point feature coordinates are translated to pixel space so that rendering for the points and curves are mapped to an [HTMLCanvasElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement).
 
+## Installation
+
+```sh
+npm install leaflet-canvas-flowmap-layer
+```
+
+`leaflet` is a peer dependency (>=1.7.0) — install it separately if you haven't already. Animation via [tween.js](https://github.com/tweenjs/tween.js) is **bundled in** and requires no separate installation.
+
+## Quickstart
+
+**ESM (recommended):**
+
+```js
+import { CanvasFlowmapLayer } from 'leaflet-canvas-flowmap-layer';
+
+const layer = new CanvasFlowmapLayer(geoJsonFeatureCollection, {
+  originAndDestinationFieldIds: {
+    originUniqueIdField: 'origin_id',
+    originGeometry: { x: 'origin_lon', y: 'origin_lat' },
+    destinationUniqueIdField: 'destination_id',
+    destinationGeometry: { x: 'destination_lon', y: 'destination_lat' },
+  },
+  pathDisplayMode: 'selection',
+  animationStarted: true,
+  animationDuration: 2000,
+}).addTo(map);
+
+layer.on('click', (e) => {
+  if (e.sharedOriginFeatures.length) {
+    layer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+  }
+});
+```
+
+**Script tag (UMD):**
+
+```html
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-canvas-flowmap-layer/dist/canvas-flowmap-layer.umd.cjs"></script>
+<script>
+  const { CanvasFlowmapLayer } = window.LeafletCanvasFlowmapLayer;
+  const layer = new CanvasFlowmapLayer(geoJsonFeatureCollection, { ... }).addTo(map);
+</script>
+```
+
 **Demos:**
 
 - [Simple](https://jwasilgeo.github.io/Leaflet.Canvas-Flowmap-Layer/docs/main)
@@ -73,15 +118,7 @@ Please see [sarahbellum/Canvas-Flowmap-Layer#data-relationships](https://github.
 
 The animations rely on the [tween.js library](https://github.com/tweenjs/tween.js) to assist with changing the underlying line property values as well as providing many different easing functions and durations. See the `setAnimationDuration()` and `setAnimationEasing()` method descriptions below for more information.
 
-**Important:** If animations are going to be used, then the developer must first load the tween.js library.
-
-```html
-<!-- Load animation tweening lib requirement for CanvasFlowMapLayer -->
-<script src="https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.umd.js"></script>
-
-<!-- then load CanvasFlowMapLayer -->
-<script src="your/path/to/src/CanvasFlowmapLayer.js"></script>
-```
+tween.js is **bundled into this package** — no separate script tag or install needed.
 
 ### Interaction
 
@@ -105,26 +142,24 @@ See the developer API section below and also [sarahbellum/Canvas-Flowmap-Layer#s
 
 ## API
 
-This extends the LeafletJS v1 [`L.GeoJSON` layer](http://leafletjs.com/reference-1.3.0.html#geojson). All properties, methods, and events provided by the `L.GeoJSON` layer are available in the `Leaflet.CanvasFlowmapLayer`, with additional custom features described below.
+This extends the LeafletJS [`GeoJSON` layer](http://leafletjs.com/reference.html#geojson) and is compatible with Leaflet >=1.7. All properties, methods, and events provided by the `GeoJSON` layer are available in `CanvasFlowmapLayer`, with additional custom features described below.
 
 ### Constructor Summary
 
 ```javascript
-var geoJsonFeatureCollection = {
+import { CanvasFlowmapLayer } from 'leaflet-canvas-flowmap-layer';
+
+const geoJsonFeatureCollection = {
   // collection of GeoJSON point features
   // with origin and destination attribute properties
-
   // see discussion above, demos, and CSV example data sources
 };
 
-var exampleFlowmapLayer = L.canvasFlowmapLayer(geoJsonFeatureCollection, {
-  // required property for this custom layer,
-  // which relies on the property names of your own data
+const exampleFlowmapLayer = new CanvasFlowmapLayer(geoJsonFeatureCollection, {
+  // required: informs the layer of your data's field names
   originAndDestinationFieldIds: {
-    // all kinds of important stuff here...see docs below
-
-    // however, this isn't required if your own data
-    // is in the same format as the layer source code
+    // all kinds of important stuff here — see docs below
+    // not required if your data already matches the layer's default field names
   },
 
   // some custom options
@@ -227,6 +262,19 @@ style: function(geoJsonFeature) {
 | --- | --- |
 | `click` | Extends [layer `click`](http://leafletjs.com/reference-1.3.0.html#interactive-layer-click) and adds the following properties to the event object: <br/><br/> `isOriginFeature`: `true` if an origin point has been clicked, but `false` if a destination point has been clicked. <br/><br/> `sharedOriginFeatures`: `Array` of features that share the same origin. <br/><br/> `sharedDestinationFeatures`: `Array` of features that share the same destination. |
 | `mouseover` | Extends [layer `mouseover`](http://leafletjs.com/reference-1.3.0.html#interactive-layer-mouseover) and adds the following properties to the event object: <br/><br/> `isOriginFeature`: `true` when the mouse first entered an origin point, but `false` when the mouse first entered a destination point. <br/><br/> `sharedOriginFeatures`: `Array` of features that share the same origin. <br/><br/> `sharedDestinationFeatures`: `Array` of features that share the same destination. |
+
+## Upgrading from v1
+
+v2 is a full rewrite in TypeScript and ships as a proper npm package. Breaking changes:
+
+| v1 | v2 |
+|---|---|
+| `L.canvasFlowmapLayer(geoJson, opts)` | `new CanvasFlowmapLayer(geoJson, opts)` (named import) |
+| `window.L.CanvasFlowmapLayer` | `import { CanvasFlowmapLayer } from 'leaflet-canvas-flowmap-layer'` |
+| Script tag attaches to `window.L` | UMD global is `window.LeafletCanvasFlowmapLayer.CanvasFlowmapLayer` |
+| Must load `tween.js` separately | tween.js is bundled — remove the separate `<script>` tag |
+
+All public methods, options, and events are unchanged.
 
 ## Licensing
 

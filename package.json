@@ -1,0 +1,58 @@
+{
+  "name": "leaflet-canvas-flowmap-layer",
+  "version": "2.0.0",
+  "description": "A LeafletJS plugin that creates a canvas layer for visualizing flow data with animated Bezier curves",
+  "type": "module",
+  "main": "./dist/canvas-flowmap-layer.umd.cjs",
+  "module": "./dist/canvas-flowmap-layer.js",
+  "types": "./dist/canvas-flowmap-layer.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/canvas-flowmap-layer.js",
+      "require": "./dist/canvas-flowmap-layer.umd.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit",
+    "serve": "npx --yes serve ."
+  },
+  "peerDependencies": {
+    "leaflet": ">=1.7.0 <3.0.0"
+  },
+  "dependencies": {
+    "@tweenjs/tween.js": "^18.6.4"
+  },
+  "devDependencies": {
+    "leaflet": "^1.9.4",
+    "@types/leaflet": "^1.9.0",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0",
+    "vite-plugin-dts": "^4.0.0"
+  },
+  "keywords": [
+    "leaflet",
+    "leaflet-plugin",
+    "canvas",
+    "flowmap",
+    "bezier",
+    "animation",
+    "gis",
+    "mapping",
+    "origin-destination"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jwasilgeo/Leaflet.Canvas-Flowmap-Layer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jwasilgeo/Leaflet.Canvas-Flowmap-Layer/issues"
+  },
+  "homepage": "https://github.com/jwasilgeo/Leaflet.Canvas-Flowmap-Layer"
+}
